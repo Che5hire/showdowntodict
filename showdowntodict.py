@@ -132,4 +132,13 @@ def list2pokemon(listOfPokemon: list):
 		pokemonString += '\n'
 	return pokemonString
 
-
+def dict2showdown(dictOfTeams: dict):
+	'''Turns a dict into a full showdown backup. Returns str'''
+	showdownBackup = ''
+	for team in dictOfTeams.items():
+		teamName = ''
+		tier = ''
+		pokemon = ''
+		showdownBackup += "===[{}] {} ===\n\n".format(team[1].get('tier', 'gen7'), team[0])
+		showdownBackup += list2pokemon(team[1]['pokemon']) + "\n"
+	return showdownBackup
