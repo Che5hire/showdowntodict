@@ -26,7 +26,6 @@ def showdown2dict(showdown):
 				if pokeline.strip().startswith("===") and pokeline.strip().endswith("==="):
 					break
 				pokemonStr += pokeline + '\n'
-			print(">>>" + pokemonStr + "<<<")
 			returndict.update({teamName:{'tier':tierName, 'pokemon':pokemon2list(pokemonStr)}})
 		linespassed += 1
 	else:		
@@ -73,7 +72,7 @@ def pokemon2list(showdown):
 			_ivvalues = line.lower().replace('ivs:', '').strip().split(' / ')
 			for iv in _ivvalues:
 				iv = iv.split(' ')
-				_ivpos = ['hp','atk','def','spa','spd','spe']#Way faster to just map another list than adding a bunch of if statements.
+				_ivpos = ('hp','atk','def','spa','spd','spe')#Way faster to just map another list than adding a bunch of if statements.
 				_ivpos = _ivpos.index(iv[1].lower())
 				try:
 					ivs[_ivpos] = int(iv[0])
@@ -84,7 +83,7 @@ def pokemon2list(showdown):
 			_evvalues = line.lower().replace('evs:', '').strip().split(' / ')
 			for ev in _evvalues:
 				ev = ev.split(' ')
-				_evpos = ['hp','atk','def','spa','spd','spe']
+				_evpos = ('hp','atk','def','spa','spd','spe')
 				_evpos = _evpos.index(ev[1].lower())
 				try:
 					evs[_evpos] = int(ev[0])
