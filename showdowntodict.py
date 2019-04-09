@@ -3,9 +3,6 @@
 class showdownFormatError(Exception):
 	def __init__(self, message):
 		self.errors = message
-class showdownToolsException(Exception):
-	def __init__(self, message):
-		self.errors = message
 def showdown2dict(showdown):
 	"""Takes a showdown export (datatype str) and converts it to the dict datatype. This is for full backups with multiple teams."""
 	returndict = {}
@@ -21,79 +18,17 @@ def showdown2dict(showdown):
 			if returndict == {}:
 				raise showdownFormatError('Could not find any teams.')
 			return returndict
-		elif (line == '') and (showdown.splitlines()[linespassed + 1] == ''):
-			if teamName != None:
-				returndict.update({teamName:{'tier':tierName, 'pokemon':listPokemon}})
-			else:
-				raise showdownFormatError('Could not find any teams.')
 		elif line.startswith('===') and line.startswith('==='):#Team titles are formatted '=== [tierName] teamName(may contain spaces) ==='
 			listPokemon = []
 			tierName = line[(line.find(' [') + 2) : (line.find('] '))]
 			teamName = line[(line.find('] ')+2) : (line.find(' ==='))].strip()
-		elif (line.find(' @ ') != -1) and teamName != None:
-			if line[line.find(' @ ') -1] == ')':
-				pokemongender = None#None == Random/Genderless, True == Male, False == Female. 'sex' would be faster to type but they call it 'gender' in-game so to avoid confusion, that's what I'm doing.
-				if line.find('(F) @') != -1:
-					line = line.replace('(F) @', '@')
-					pokemongender = False
-				elif line.find('(M) @') != -1:
-					line = line.replace('(F) @', '@')
-					pokemongender = True
-				pokemon = line[(line.find(' (')+2):line.find(') @')].strip()
-				nickname = line[0:(line.find(' ('))].strip()
-				pokemondict = {'pokemon': pokemon, 'nickname': nickname, 'gender': pokemongender, 'shiny':False, 'moves': [], 'nature':'serious', 'item': (line[(line.find(' @ ')+2):].strip())}#The shiny value may be marked true later. 'Serious' is the default nature on most tools
-				_linespassespoke = 0
-				_nature = ''
-				_moves = []#This can be more than 4 but the standard metagames (i.e. anything that has more than 4 moves as a gimmick.)
-				_linespassedpoke = 0
-				_pokemonlines = showdown.splitlines()[(linespassed+1):]
-				_pokemonlines = _pokemonlines[:_pokemonlines.index('')]
-				for pokeline in _pokemonlines:
-					print(pokeline)
-					#Note that IVs are 31 because that's the maximum and default if not specified in the string
-					#The order of which stat is which is the same as it is in-game and on showdown from top to bottom: HP,Atk,Def,SpA,SpD,Spe this is pretty standard which is why we will not be using keys.
-					evs = [0,0,0,0,0,0]
-					ivs = [31,31,31,31,31,31]
-					if pokeline.strip().endswith('Nature'):
-						pokemondict['nature'] = line.split(' ')[0]
-					elif pokeline.startswith('-'):
-						pokemondict['moves'].append(pokeline.replace('-', '').strip())
-					elif pokeline.startswith('Shiny:'):#This will block this from catching in the 'catch all' if statement.
-						if pokeline.lower().find('yes') == -1:
-							pokemondict['shiny'] = True#No need to code the other condition, it's False by default if the Shiny: No is there or not.
-					elif pokeline.lower().startswith('ivs:'):
-						_ivvalues = pokeline.lower().replace('ivs:', '').strip().split(' / ')
-						for iv in _ivvalues:
-							iv = iv.split(' ')
-							_ivpos = ['hp','atk','def','spa','spd','spe']#Way faster to just map another list than adding a bunch of if statements.
-							_ivpos = _ivpos.index(iv[1].lower())
-							try:
-								ivs[_ivpos] = int(iv[0])
-							except ValueError:
-								raise showdownFormatError('IVs must be int')
-						pokemondict['ivs']=ivs
-					elif pokeline.lower().startswith('evs:'):
-						_evvalues = pokeline.lower().replace('evs:', '').strip().split(' / ')
-						for ev in _evvalues:
-							ev = ev.split(' ')
-							_evpos = ['hp','atk','def','spa','spd','spe']
-							_evpos = _evpos.index(ev[1].lower())
-							try:
-								evs[_evpos] = int(ev[0])
-							except ValueError:
-								raise showdownFormatError('EVs must be int')
-
-						pokemondict['evs'] = evs
-					elif pokeline.find(':') == -1:#Catch all for other things I'm too lazy to code, like happiness.
-						_value = pokeline[(pokeline.find(':')+1):].strip()
-						_key = pokeline[:pokeline.find(':')]
-						if _value.isdigit():
-							_value = int(_value)
-						pokemondict[_key] = _value
-				else:
-					listPokemon += [pokemondict]
-					pokemon = None
-					nickname = None
+			
+			pokemonStr = ''
+			for pokeline in showdown.splitlines()[linespassed + 2:]:
+				if pokeline.strip().startswith("===") and pokeline.strip().endswith("==="):
+					break
+				pokemonStr += pokeline + '\n'
+			returndict.update({teamName:{'tier':tierName, 'pokemon':pokemon2list(pokemonStr)}})
 		linespassed += 1
 	else:		
 		if returndict == {}:
@@ -124,11 +59,10 @@ def pokemon2list(showdown):
 			pokemondict = {'pokemon': pokemon, 'nickname': nickname, 'gender': pokemongender, 'shiny':False, 'moves': [], 'nature':'serious', 'item': (line[(line.find(' @ ')+2):].strip())}#The shiny value may be marked true later. 'Serious' is the default nature on most tools
 			_linespassespoke = 0
 			_nature = ''
-			_moves = []#This can be more than 4 but the standard metagames (i.e. anything that has more than 4 moves as a gimmick.)
-			#Note that IVs are 31 because that's the maximum and default if not specified in the string
-			#The order of which stat is which is the same as it is in-game and on showdown from top to bottom: HP,Atk,Def,SpA,SpD,Spe this is pretty standard which is why we will not be using keys.
+			_moves = []#This allows more than 4 moves as some custom metagames may allow additional moves but this is usually 4 or less in standard metagames.
+			#The order of which stat is which is the same as it is in-game and on showdown from top to bottom: HP,Atk,Def,SpA,SpD,Spe.
 			evs = [0,0,0,0,0,0]
-			ivs = [31,31,31,31,31,31]
+			ivs = [31,31,31,31,31,31] #IVS are assumed to be max unless otherwise stated in showdown exports.
 		elif line.strip().endswith('Nature'):
 			pokemondict['nature'] = line.split(' ')[0]
 		elif line.startswith('-'):
@@ -166,7 +100,6 @@ def pokemon2list(showdown):
 				_value = int(_value)
 			pokemondict[_key] = _value
 		elif len(line) == 0:
-			print(pokemondict)
 			listPokemon += [pokemondict]
 		linespassed += 1
 	else:
