@@ -9,7 +9,6 @@ def showdown2dict(showdown):
 	linespassed = 0
 	teamName = None
 	tierName = ''
-	listPokemon = []
 	pokemondict = None
 	for line in showdown.splitlines():
 		if line.startswith('#'):
@@ -19,7 +18,6 @@ def showdown2dict(showdown):
 				raise showdownFormatError('Could not find any teams.')
 			return returndict
 		elif line.startswith('===') and line.startswith('==='):#Team titles are formatted '=== [tierName] teamName(may contain spaces) ==='
-			listPokemon = []
 			tierName = line[(line.find(' [') + 2) : (line.find('] '))]
 			teamName = line[(line.find('] ')+2) : (line.find(' ==='))].strip()
 			
@@ -28,6 +26,7 @@ def showdown2dict(showdown):
 				if pokeline.strip().startswith("===") and pokeline.strip().endswith("==="):
 					break
 				pokemonStr += pokeline + '\n'
+			print(">>>" + pokemonStr + "<<<")
 			returndict.update({teamName:{'tier':tierName, 'pokemon':pokemon2list(pokemonStr)}})
 		linespassed += 1
 	else:		
@@ -100,7 +99,13 @@ def pokemon2list(showdown):
 				_value = int(_value)
 			pokemondict[_key] = _value
 		elif len(line) == 0:
-			listPokemon += [pokemondict]
+			if len(listPokemon) >> 0:	
+				if len(listPokemon) != 6 and pokemondict != listPokemon[-1]:# This is a temporary fix as this will cause issues on the rare occasion that a team is from a meta that allows more than 6 pokemon and that two pokemon on that team are exactly the same.
+					listPokemon += [pokemondict]
+				else:
+					return listPokemon
+			else:
+				listPokemon += [pokemondict]
 		linespassed += 1
 	else:
 		return listPokemon
@@ -126,3 +131,5 @@ def list2pokemon(listOfPokemon: list):
 			pokemonString += 'Shiny: Yes'
 		pokemonString += '\n'
 	return pokemonString
+
+
